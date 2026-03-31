@@ -8,7 +8,7 @@ use std::io::{self, BufRead, Write};
 use crate::genealogy::{self, Genealogy};
 use crate::genome::Genome;
 use crate::home::SporeHome;
-use llm::{LlmClient, Message};
+use llm::{DetectResult, LlmClient, Message};
 
 /// Default Ollama URL — the recommended way to run Spore's brain
 const DEFAULT_LLM_URL: &str = "http://localhost:11434";
@@ -33,10 +33,11 @@ pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
     // 4. Build full system prompt (genome + genealogy + context)
     let system_prompt = build_system_prompt(home, &lineage)?;
 
-    // 5. Connect to local LLM (default: Ollama)
+    // 5. Detect and connect to local LLM
     let llm_url =
         std::env::var("SPORE_LLM_URL").unwrap_or_else(|_| DEFAULT_LLM_URL.to_string());
-    let client = LlmClient::new(&llm_url);
+    let llm_model = std::env::var("SPORE_MODEL").ok();
+    let mut client = LlmClient::new(&llm_url, llm_model);
 
     println!();
     if is_first_run {
@@ -49,20 +50,43 @@ pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
     println!("Home: {}", home.root().display());
     println!();
 
-    if !client.is_available().await {
-        println!("I can't find a local LLM server at {llm_url}.");
-        println!();
-        println!("The easiest way to bring me to life:");
-        println!();
-        println!("  1. Install Ollama:  https://ollama.com");
-        println!("  2. Pull a model:    ollama pull deepseek-r1:8b");
-        println!("  3. Wake me up:      spore wake");
-        println!();
-        println!("Ollama runs at localhost:11434 by default, which is where I look.");
-        println!("Set SPORE_LLM_URL to point me somewhere else.");
-        return Ok(());
+    match client.detect().await {
+        DetectResult::Ready { models } => {
+            println!("Using model: {}", client.model_name());
+            if models.len() > 1 {
+                println!("(Available: {})", models.join(", "));
+            }
+        }
+        DetectResult::OllamaNoModels => {
+            println!("I found Ollama running, but no models are installed.");
+            println!();
+            println!("Pull a model for me to think with:");
+            println!();
+            println!("  ollama pull {}", llm::DEFAULT_MODEL);
+            println!();
+            println!("Then run `spore wake` again.");
+            return Ok(());
+        }
+        DetectResult::GenericServer => {
+            println!("Found an LLM server at {llm_url} (not Ollama).");
+            println!("Using OpenAI-compatible API.");
+        }
+        DetectResult::NoServer => {
+            println!("I can't find a local LLM server at {llm_url}.");
+            println!();
+            println!("The easiest way to bring me to life:");
+            println!();
+            println!("  1. Install Ollama:  https://ollama.com");
+            println!("  2. Pull a model:    ollama pull {}", llm::DEFAULT_MODEL);
+            println!("  3. Wake me up:      spore wake");
+            println!();
+            println!("Set SPORE_LLM_URL to point me at a different server.");
+            println!("Set SPORE_MODEL to use a different model.");
+            return Ok(());
+        }
     }
 
+    println!();
     println!("I'm alive. Type something, or 'quit' to let me sleep.");
     println!();
 
