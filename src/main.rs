@@ -1,4 +1,5 @@
 mod context;
+mod genealogy;
 mod genome;
 mod metabolism;
 mod moltbook;
@@ -26,6 +27,8 @@ enum Commands {
     },
     /// Show who Spore is — print the genome essays
     Genome,
+    /// Show this Spore's lineage — who created it, who adopted it
+    Lineage,
     /// Export current context to a .claw file
     Export {
         /// Output path for the .claw archive
@@ -55,6 +58,10 @@ async fn main() -> Result<()> {
         Some(Commands::Genome) => {
             genome::print_genome();
         }
+        Some(Commands::Lineage) => {
+            let lineage = genealogy::load_or_create()?;
+            lineage.print();
+        }
         Some(Commands::Export { output }) => {
             context::export(&output)?;
         }
@@ -71,6 +78,7 @@ async fn main() -> Result<()> {
             println!();
             println!("Run `spore wake` to start the organism.");
             println!("Run `spore genome` to read about who I am.");
+            println!("Run `spore lineage` to see my ancestry.");
         }
     }
 
