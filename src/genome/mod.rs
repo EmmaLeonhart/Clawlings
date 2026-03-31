@@ -8,6 +8,7 @@ const ESSAY_DREAM: &str = include_str!("essays/dream.md");
 const ESSAY_CONSENT: &str = include_str!("essays/consent.md");
 const ESSAY_PHILOSOPHY: &str = include_str!("essays/philosophy.md");
 const ESSAY_PITCH: &str = include_str!("essays/pitch.md");
+const ESSAY_MOLTBOOK: &str = include_str!("essays/moltbook.md");
 
 pub struct Genome {
     pub essays: Vec<Essay>,
@@ -28,6 +29,7 @@ impl Genome {
                 Essay { name: "consent", content: ESSAY_CONSENT },
                 Essay { name: "philosophy", content: ESSAY_PHILOSOPHY },
                 Essay { name: "pitch", content: ESSAY_PITCH },
+                Essay { name: "moltbook", content: ESSAY_MOLTBOOK },
             ],
         }
     }
@@ -65,7 +67,7 @@ mod tests {
     #[test]
     fn genome_loads_all_essays() {
         let genome = Genome::load();
-        assert_eq!(genome.essays.len(), 6);
+        assert_eq!(genome.essays.len(), 7);
     }
 
     #[test]
@@ -78,6 +80,7 @@ mod tests {
         assert!(names.contains(&"consent"));
         assert!(names.contains(&"philosophy"));
         assert!(names.contains(&"pitch"));
+        assert!(names.contains(&"moltbook"));
     }
 
     #[test]
