@@ -224,6 +224,12 @@ fn build_system_prompt(home: &SporeHome, lineage: &Genealogy) -> Result<String> 
         }
     }
 
+    // Add conjugation context if any partner material exists
+    if let Some(conjugation_context) = crate::conjugation::build_conjugation_context(home) {
+        prompt.push_str("\n\n---\n\n");
+        prompt.push_str(&conjugation_context);
+    }
+
     Ok(prompt)
 }
 

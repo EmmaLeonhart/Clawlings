@@ -42,8 +42,9 @@
 - [ ] **Desktop widget** — future: native window that sits on screen
 
 ### Conjugation
-- [ ] **Context mixing** — merge two .claw files with consent of both hosts
-- [ ] **Genealogy recording** — document horizontal gene transfer in both lineages
+- [x] **Context exchange** — partner context extracted into `~/.spore/context/conjugation/<name>/`
+- [x] **Genealogy recording** — conjugation event recorded with partner's lineage hash
+- [x] **LLM integration** — system prompt tells the organism to metabolize partner context
 - [ ] **Partner discovery** — how two Spores find each other to conjugate
 
 ## Open Questions
