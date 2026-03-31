@@ -14,6 +14,9 @@
 - [x] Design docs — DESIGN.md, LLM_STRATEGY.md
 - [x] Private GitHub repo created and all work pushed
 
+- [x] SporeHome — `~/.spore/` directory as organism's body (code-level containerization)
+- [x] Ollama as default LLM backend (localhost:11434)
+
 ## In Progress
 
 ## Next Up

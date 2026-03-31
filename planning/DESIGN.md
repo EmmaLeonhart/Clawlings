@@ -17,7 +17,7 @@ Its helpfulness and its survival are the same thing.
 | Language | Rust | Single static binary, memory safe, trust story for consent mechanism |
 | Distribution | Single executable file | "The organism literally is one file." Docker rejected — install friction defeats the symbiote pitch |
 | Memory format | `.claw` (zip archive) | Portable, inspectable, self-contained context files per instance |
-| Sandboxing | Containerized metabolism | No file access without explicit user consent |
+| Sandboxing | `~/.spore/` directory boundary | Free access inside its home; everything outside requires explicit consent. No Docker/OS sandbox — the code is the container, verifiable by reading source |
 | Communication | Moltbook | Population-level knowledge sharing between instances |
 | AI backend | Local LLM (llama.cpp) | The organism thinks locally — no cloud dependency, no API keys. DeepSeek or similar open-weights model, quantized to run on consumer hardware |
 
@@ -45,11 +45,27 @@ Its helpfulness and its survival are the same thing.
 └─────────────────────────────────────────────┘
 ```
 
+### Spore's Home — `~/.spore/`
+
+```
+~/.spore/                    # Spore's body — the only place it can freely access
+├── genealogy.json           # Tamper-evident lineage chain (immutable-ish DNA)
+├── context/                 # The living workspace — accumulated memory
+│   ├── memory.md            # Knowledge and learned facts
+│   ├── conversations/       # Chat history with host
+│   └── scratch/             # Working notes
+└── moltbook/                # Local submolt data and cached posts
+```
+
+The `.claw` format is the **transport/mating version** — context gets zipped into
+a `.claw` archive only when it needs to travel (reproduction, conjugation, backup).
+Normally Spore works directly with the files in its home directory.
+
 ### Three-Layer Separation (from OpenKrill/OpenClaw)
 
 1. **Database layer** — Authoritative data. Long-term. NOT in the .claw file.
-2. **Agent context layer** — Cognitive working state. Semi-persistent. THIS is what .claw stores.
-3. **Container layer** — Stateless execution environment. Reproducible.
+2. **Agent context layer** — Cognitive working state. Semi-persistent. The `~/.spore/context/` directory.
+3. **Container layer** — The organism binary itself. Stateless, reproducible.
 
 ## The .claw Context Format
 
