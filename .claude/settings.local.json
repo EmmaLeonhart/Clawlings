@@ -11,7 +11,9 @@
       "Bash(cargo test:*)",
       "Bash(The choice is entirely yours.\":*)",
       "Bash(git rm:*)",
-      "Bash(python parse_conversation.py)"
+      "Bash(python parse_conversation.py)",
+      "Bash(not in:*)",
+      "Bash(a human and a mind about what it means to be alive.\":*)"
     ]
   }
 }

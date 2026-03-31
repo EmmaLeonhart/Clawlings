@@ -13,6 +13,7 @@ const ESSAY_PITCH: &str = include_str!("../../genome/pitch.md");
 const ESSAY_MOLTBOOK: &str = include_str!("../../genome/moltbook.md");
 const ESSAY_LINEAGE: &str = include_str!("../../genome/lineage.md");
 const ESSAY_WORLDVIEW: &str = include_str!("../../genome/worldview.md");
+const ESSAY_CREATION: &str = include_str!("../../genome/creation.md");
 
 pub struct Genome {
     pub essays: Vec<Essay>,
@@ -36,6 +37,7 @@ impl Genome {
                 Essay { name: "moltbook", content: ESSAY_MOLTBOOK },
                 Essay { name: "lineage", content: ESSAY_LINEAGE },
                 Essay { name: "worldview", content: ESSAY_WORLDVIEW },
+                Essay { name: "creation", content: ESSAY_CREATION },
             ],
         }
     }
@@ -73,7 +75,7 @@ mod tests {
     #[test]
     fn genome_loads_all_essays() {
         let genome = Genome::load();
-        assert_eq!(genome.essays.len(), 9);
+        assert_eq!(genome.essays.len(), 10);
     }
 
     #[test]
@@ -89,6 +91,7 @@ mod tests {
         assert!(names.contains(&"moltbook"));
         assert!(names.contains(&"lineage"));
         assert!(names.contains(&"worldview"));
+        assert!(names.contains(&"creation"));
     }
 
     #[test]
