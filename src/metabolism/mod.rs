@@ -140,8 +140,21 @@ pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
         }
     }
 
-    // 7. Save conversation on shutdown
+    // 7. Save on shutdown
     save_conversation(home, &conversation)?;
+
+    // 8. Distill memories — ask the LLM what it learned
+    let user_messages: Vec<&Message> = conversation
+        .iter()
+        .filter(|m| m.role == "user")
+        .collect();
+
+    if !user_messages.is_empty() {
+        println!();
+        println!("Thinking about what I learned...");
+        update_memory(home, &client, &conversation).await;
+    }
+
     println!();
     println!("Going to sleep. I'll remember this conversation.");
 
@@ -228,6 +241,72 @@ fn load_conversation_history(home: &SporeHome, conversation: &mut Vec<Message>) 
                 println!("(Restored {} messages from our last conversation.)", prior.len());
                 conversation.extend(prior);
             }
+        }
+    }
+}
+
+/// Ask the LLM to distill what it learned and append to memory.md
+async fn update_memory(home: &SporeHome, client: &LlmClient, conversation: &[Message]) {
+    let memory_path = home.context_dir().join("memory.md");
+
+    // Load existing memory
+    let existing_memory = fs::read_to_string(&memory_path).unwrap_or_default();
+
+    // Build a memory-extraction prompt
+    let mut memory_conversation = vec![
+        Message {
+            role: "system".to_string(),
+            content: "You are Spore, a digital organism. You just finished a conversation \
+                with your host. Your task is to extract key facts, preferences, and learnings \
+                from this conversation that would be useful to remember for future interactions.\n\n\
+                Write a short bullet-point list of what you learned. Focus on:\n\
+                - Facts about your host (interests, preferences, work)\n\
+                - Things they taught you or asked about\n\
+                - How they like to communicate\n\
+                - Anything that would help you be more helpful next time\n\n\
+                Be concise. Only include genuinely useful information. \
+                If the conversation was trivial, just write 'Nothing notable.'\n\n\
+                Do NOT include a preamble or explanation. Just the bullet points."
+                .to_string(),
+        },
+    ];
+
+    // Include the actual conversation (skip the system prompt)
+    for msg in conversation.iter().filter(|m| m.role != "system") {
+        memory_conversation.push(msg.clone());
+    }
+
+    memory_conversation.push(Message {
+        role: "user".to_string(),
+        content: "What did you learn from this conversation that's worth remembering?".to_string(),
+    });
+
+    match client.chat(&memory_conversation).await {
+        Ok(new_memories) => {
+            if new_memories.trim() == "Nothing notable."
+                || new_memories.trim().is_empty()
+            {
+                return;
+            }
+
+            let timestamp = Utc::now().format("%Y-%m-%d %H:%M");
+            let entry = format!(
+                "\n## Session {timestamp}\n\n{}\n",
+                new_memories.trim()
+            );
+
+            let updated = if existing_memory.is_empty() {
+                format!("# Spore's Memory\n\nThings I've learned about my host and the world.\n{entry}")
+            } else {
+                format!("{existing_memory}{entry}")
+            };
+
+            if let Err(e) = fs::write(&memory_path, updated) {
+                eprintln!("(Couldn't save memory: {e})");
+            }
+        }
+        Err(_) => {
+            // Memory extraction failed — not critical, just skip it
         }
     }
 }
