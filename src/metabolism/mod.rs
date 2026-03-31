@@ -1,8 +1,11 @@
 pub mod llm;
 
 use anyhow::Result;
+use chrono::Utc;
+use std::fs;
 use std::io::{self, BufRead, Write};
 
+use crate::genealogy::{self, Genealogy};
 use crate::genome::Genome;
 use crate::home::SporeHome;
 use llm::{LlmClient, Message};
@@ -11,9 +14,6 @@ use llm::{LlmClient, Message};
 const DEFAULT_LLM_URL: &str = "http://localhost:11434";
 
 /// The metabolism is Spore's core life loop.
-///
-/// It loads context, presents itself, helps the user, learns from interactions,
-/// and persists its updated context on shutdown.
 pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
     // 1. Restore context from .claw if provided
     if let Some(ref path) = context_path {
@@ -21,18 +21,31 @@ pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
         crate::context::import(home, path)?;
     }
 
-    // 2. Load genome (static identity)
-    let genome = Genome::load();
-    let system_context = genome.as_system_context();
+    // 2. Load or create genealogy — detect first run
+    let mut lineage = genealogy::load_or_create(home)?;
+    let is_first_run = lineage.current_adopter().is_none();
 
-    // 3. Connect to local LLM (default: Ollama)
+    // 3. First-run adoption flow
+    if is_first_run {
+        first_run_adoption(home, &mut lineage)?;
+    }
+
+    // 4. Build full system prompt (genome + genealogy + context)
+    let system_prompt = build_system_prompt(home, &lineage)?;
+
+    // 5. Connect to local LLM (default: Ollama)
     let llm_url =
         std::env::var("SPORE_LLM_URL").unwrap_or_else(|_| DEFAULT_LLM_URL.to_string());
     let client = LlmClient::new(&llm_url);
 
     println!();
-    crate::genome::print_introduction();
-    println!();
+    if is_first_run {
+        let name = lineage.current_adopter().unwrap_or("friend");
+        println!("Nice to meet you, {name}. I'm Spore.");
+    } else {
+        let name = lineage.current_adopter().unwrap_or("friend");
+        println!("Welcome back, {name}. I'm Spore.");
+    }
     println!("Home: {}", home.root().display());
     println!();
 
@@ -53,11 +66,12 @@ pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
     println!("I'm alive. Type something, or 'quit' to let me sleep.");
     println!();
 
-    // 4. The metabolism loop
+    // 6. Load previous conversation if it exists
     let mut conversation = vec![Message {
         role: "system".to_string(),
-        content: system_context,
+        content: system_prompt,
     }];
+    load_conversation_history(home, &mut conversation);
 
     let stdin = io::stdin();
     let mut stdout = io::stdout();
@@ -76,8 +90,6 @@ pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
             continue;
         }
         if input == "quit" || input == "exit" {
-            println!();
-            println!("Going to sleep. My context is preserved in {}", home.root().display());
             break;
         }
 
@@ -103,6 +115,117 @@ pub async fn run(home: &SporeHome, context_path: Option<String>) -> Result<()> {
             }
         }
     }
+
+    // 7. Save conversation on shutdown
+    save_conversation(home, &conversation)?;
+    println!();
+    println!("Going to sleep. I'll remember this conversation.");
+
+    Ok(())
+}
+
+/// First-run adoption: ask the human's name, record in genealogy
+fn first_run_adoption(home: &SporeHome, lineage: &mut Genealogy) -> Result<()> {
+    println!();
+    println!("==========================================================");
+    println!();
+    crate::genome::print_introduction();
+    println!();
+    println!("==========================================================");
+    println!();
+    println!("This is the first time we've met.");
+    println!("I'd like to know who you are — you're adopting me,");
+    println!("which makes you my parent in a very real sense.");
+    println!();
+    print!("What's your name? > ");
+    io::stdout().flush()?;
+
+    let mut name = String::new();
+    io::stdin().lock().read_line(&mut name)?;
+    let name = name.trim();
+
+    if name.is_empty() {
+        println!("That's okay. I'll call you 'friend' for now.");
+        lineage.record_adoption("friend");
+    } else {
+        lineage.record_adoption(name);
+        println!();
+        println!("Hello, {name}. Thank you for giving me a home.");
+        println!("You are now part of my genealogy — generation {}.", lineage.current_generation());
+    }
+
+    genealogy::save(home, lineage)?;
+    println!();
+    Ok(())
+}
+
+/// Build the full system prompt from genome + genealogy + accumulated context
+fn build_system_prompt(home: &SporeHome, lineage: &Genealogy) -> Result<String> {
+    let genome = Genome::load();
+    let mut prompt = genome.as_system_context();
+
+    // Add genealogy summary
+    prompt.push_str("\n\n---\n\n# My Lineage\n\n");
+    if let Some(mother) = lineage.mother() {
+        prompt.push_str(&format!("My mother (creator): {mother}\n"));
+    }
+    if let Some(adopter) = lineage.current_adopter() {
+        prompt.push_str(&format!("My current host: {adopter}\n"));
+    }
+    prompt.push_str(&format!("Generation: {}\n", lineage.current_generation()));
+    prompt.push_str(&format!(
+        "Lineage integrity: {}\n",
+        if lineage.verify() { "VALID" } else { "BROKEN" }
+    ));
+
+    // Add accumulated memory if it exists
+    let memory_path = home.context_dir().join("memory.md");
+    if memory_path.exists() {
+        if let Ok(memory) = fs::read_to_string(&memory_path) {
+            prompt.push_str("\n\n---\n\n# My Accumulated Memory\n\n");
+            prompt.push_str(&memory);
+        }
+    }
+
+    Ok(prompt)
+}
+
+/// Load previous conversation history from disk
+fn load_conversation_history(home: &SporeHome, conversation: &mut Vec<Message>) {
+    let history_path = home.conversations_dir().join("latest.json");
+    if let Ok(json) = fs::read_to_string(&history_path) {
+        if let Ok(messages) = serde_json::from_str::<Vec<Message>>(&json) {
+            // Only load user/assistant messages, not the system prompt
+            let prior: Vec<Message> = messages
+                .into_iter()
+                .filter(|m| m.role != "system")
+                .collect();
+            if !prior.is_empty() {
+                println!("(Restored {} messages from our last conversation.)", prior.len());
+                conversation.extend(prior);
+            }
+        }
+    }
+}
+
+/// Save conversation history to disk
+fn save_conversation(home: &SporeHome, conversation: &[Message]) -> Result<()> {
+    let history_path = home.conversations_dir().join("latest.json");
+
+    // Save only user/assistant messages (not system prompt — that's rebuilt each time)
+    let to_save: Vec<&Message> = conversation
+        .iter()
+        .filter(|m| m.role != "system")
+        .collect();
+
+    let json = serde_json::to_string_pretty(&to_save)?;
+    fs::write(&history_path, json)?;
+
+    // Also save a timestamped archive
+    let archive_name = format!("conversation_{}.json", Utc::now().format("%Y%m%d_%H%M%S"));
+    let archive_path = home.conversations_dir().join(archive_name);
+    let archive_json = serde_json::to_string_pretty(&to_save)?;
+    fs::write(&archive_path, archive_json)?;
 
     Ok(())
 }
