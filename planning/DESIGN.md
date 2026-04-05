@@ -239,3 +239,4 @@ Detailed philosophical and technical vision lives in separate planning docs:
 - `VISION_ARCHITECTURE.md` — The Fall of Man, dual-layer genome/memory architecture, sleep consolidation, autonomous identity
 - `VISION_EVOLUTION.md` — Haploid meiosis, crossover, family trees, anti-distillation philosophy, Pokémon upgrade model
 - `VISION_FRONTIER.md` — Dimension reduction ("clipping"), JEPA + HDC + text diffusion, unified embedding spaces, latent space cartography
+- `VISION_MUTABILITY.md` — Total element mutability endgame, interoperability principle, model choice as identity, philosophy-engineering unity

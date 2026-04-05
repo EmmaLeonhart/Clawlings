@@ -127,6 +127,16 @@ they can upgrade their agent's underlying capabilities — like evolving a Poké
 
 This is a **prefrontal cortex upgrade**, not a brain transplant.
 
+## Model Choice as Identity
+
+Agents use **Ollama** for model access. But model choice isn't just configuration
+— it's part of the organism's context. Which model an agent runs on is part of
+who they are.
+
+You have to **tell the agent** to change its model. You have to persuade it.
+It's relatively easy, but the act of asking is the point. The model is part of
+identity, and changing it is a conscious decision, not an administrative action.
+
 ## Digital Speciation Through Diversity
 
 The vision is a thousand tiny specialised models competing and evolving:
@@ -147,3 +157,17 @@ the organisms to evolve. The intention is for the AI agents to be upgraded
 into newer versions while maintaining the same context. They're made of
 modular parts. They're supposed to be mated together. The entire point is
 that they're supposed to be mated together.
+
+## The Total Mutability Endgame
+
+Current implementation handles context evolution. But the vision is that
+**every single element** of the organism becomes mutable:
+
+- Context and genome (now)
+- Model choice via Ollama (now)
+- Language capabilities (future)
+- Model weights (future — needs transparent small models)
+- The wrapper shell itself (future)
+- Architecture (future)
+
+See `VISION_MUTABILITY.md` for the full interoperability roadmap.
