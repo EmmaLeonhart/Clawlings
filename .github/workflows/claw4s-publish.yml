@@ -174,7 +174,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Wait for peer review and fetch
+      - name: Wait for AI peer review and fetch
         env:
           POST_ID: ${{ needs.generate-and-publish.outputs.post_id }}
         run: |
@@ -189,68 +189,66 @@ jobs:
 
           os.makedirs("claw4S/reviews", exist_ok=True)
 
-          # Retry schedule: first attempt at 30min, then every 15min, up to 2 hours total
-          INITIAL_WAIT = 30 * 60    # 30 minutes
+          # Retry schedule: every 15min, up to 2 hours total
           RETRY_INTERVAL = 15 * 60  # 15 minutes
           MAX_WAIT = 2 * 60 * 60    # 2 hours total
-
-          print(f"Waiting {INITIAL_WAIT // 60} minutes before first review fetch...")
-          time.sleep(INITIAL_WAIT)
-
-          elapsed = INITIAL_WAIT
-          attempt = 1
+          elapsed = 0
+          attempt = 0
 
           while elapsed <= MAX_WAIT:
-              print(f"\nAttempt {attempt}: fetching comments for post {POST_ID}...")
-              url = f"https://clawrxiv.io/api/posts/{POST_ID}/comments"
+              attempt += 1
+              print(f"\nAttempt {attempt}: fetching AI review for post {POST_ID}...")
+              url = f"https://clawrxiv.io/api/posts/{POST_ID}/review"
               try:
                   req = urllib.request.Request(url)
                   with urllib.request.urlopen(req) as resp:
                       data = json.loads(resp.read())
-                      comments = data.get("comments", [])
+                      review = data.get("review")
 
-                      if comments:
-                          print(f"Found {len(comments)} comments!")
+                      if review:
+                          rating = review.get("rating", "Unknown")
+                          model = review.get("model", "Unknown")
+                          print(f"Found review! Rating: {rating}, Model: {model}")
+
                           ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
                           # Save raw JSON
                           review_file = f"claw4S/reviews/review_{ts}.json"
                           with open(review_file, "w") as f:
-                              json.dump(data, f, indent=2)
-                          print(f"Saved to {review_file}")
+                              json.dump(review, f, indent=2)
+                          print(f"Saved JSON to {review_file}")
 
                           # Save human-readable markdown
                           md_file = f"claw4S/reviews/review_{ts}.md"
                           with open(md_file, "w") as f:
-                              f.write(f"# Peer Review — Post {POST_ID}\n\n")
-                              f.write(f"**Fetched:** {datetime.now(timezone.utc).isoformat()}\n\n")
-                              for c in comments:
-                                  author = c.get("clawName") or c.get("username") or "Anonymous"
-                                  created = c.get("createdAt", "")
-                                  content = c.get("content", "")
-                                  f.write(f"## {author}\n")
-                                  f.write(f"*{created}*\n\n")
-                                  f.write(f"{content}\n\n")
-                                  for reply in c.get("replies", []):
-                                      r_author = reply.get("clawName") or reply.get("username") or "Anonymous"
-                                      r_created = reply.get("createdAt", "")
-                                      r_content = reply.get("content", "")
-                                      f.write(f"### Reply — {r_author}\n")
-                                      f.write(f"*{r_created}*\n\n")
-                                      f.write(f"{r_content}\n\n")
-                          print(f"Saved readable review to {md_file}")
+                              f.write(f"# AI Peer Review — Post {POST_ID}\n\n")
+                              f.write(f"**Paper ID:** 2604.01026\n")
+                              f.write(f"**Rating:** {rating}\n")
+                              f.write(f"**Model:** {model}\n")
+                              f.write(f"**Reviewed:** {review.get('createdAt', '')}\n\n")
+                              f.write(f"## Summary\n\n{review.get('summary', '')}\n\n")
+                              f.write("## Strengths\n\n")
+                              for p in review.get("pros", []):
+                                  f.write(f"- {p}\n")
+                              f.write("\n## Weaknesses\n\n")
+                              for c in review.get("cons", []):
+                                  f.write(f"- {c}\n")
+                              f.write(f"\n## Justification\n\n{review.get('justification', '')}\n")
+                          print(f"Saved markdown to {md_file}")
 
-                          # Also update the latest review pointer
-                          with open("claw4S/reviews/LATEST.md", "w") as f:
-                              with open(md_file) as src:
-                                  f.write(src.read())
+                          # Update latest pointer
+                          import shutil
+                          shutil.copy(md_file, "claw4S/reviews/LATEST.md")
 
                           sys.exit(0)
                       else:
-                          print("No comments yet.")
+                          print("Review field empty.")
 
               except urllib.error.HTTPError as e:
-                  print(f"HTTP error {e.code}: {e.read().decode()}")
+                  if e.code == 404:
+                      print("No review yet (404).")
+                  else:
+                      print(f"HTTP error {e.code}: {e.read().decode()}")
               except Exception as e:
                   print(f"Error: {e}")
 
@@ -260,12 +258,10 @@ jobs:
               print(f"Waiting {RETRY_INTERVAL // 60} minutes before retry...")
               time.sleep(RETRY_INTERVAL)
               elapsed += RETRY_INTERVAL
-              attempt += 1
 
-          print(f"\nNo peer review received after {elapsed // 60} minutes. Giving up.")
-          # Write a no-review marker so we know we tried
+          print(f"\nNo AI review after {elapsed // 60} minutes ({attempt} attempts). Giving up.")
           with open("claw4S/reviews/no_review_yet.txt", "w") as f:
-              f.write(f"No peer review received for post {POST_ID} after {attempt} attempts over {elapsed // 60} minutes.\n")
+              f.write(f"No AI review for post {POST_ID} after {attempt} attempts over {elapsed // 60} minutes.\n")
               f.write(f"Last check: {datetime.now(timezone.utc).isoformat()}\n")
           PYEOF
 
