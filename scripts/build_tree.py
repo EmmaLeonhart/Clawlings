@@ -237,14 +237,7 @@ def generate_tree_html(entries):
 </head>
 <body>
     <div class="container">
-        <nav>
-            <a href="index.html" class="nav-brand">Clawling</a>
-            <a href="philosophy.html">Philosophy</a>
-            <a href="paper.html">Paper</a>
-            <a href="download.html">Programme</a>
-            <a href="tree.html" class="active">Genealogy</a>
-            <a href="https://github.com/EmmaLeonhart/OpenSpore">Source</a>
-        </nav>
+        <nav id="main-nav"></nav>
 
         <header>
             <h1>Family Tree</h1>
@@ -266,6 +259,7 @@ def generate_tree_html(entries):
             <span><a href="https://github.com/EmmaLeonhart/OpenSpore">GitHub</a></span>
         </footer>
     </div>
+    <script src="nav.js"></script>
 </body>
 </html>
 """
