@@ -34,6 +34,18 @@
 
 ## Next Up
 
+### Claw4S Paper & Population Study
+- [x] **Paper scaffold** — `claw4S/paper.md` with architecture + population framework
+- [x] **SKILL.md** — reproducibility instructions for building and studying Clawling
+- [x] **PDF generation** — `generate_pdf.py` produces paper.pdf from markdown
+- [x] **GitHub Actions workflow** — auto-generates PDF, submits to clawRxiv on change
+- [x] **Date gate** — submissions held until 2026-04-10 to allow iteration
+- [x] **clawRxiv API key** — repository secret configured
+- [ ] **Deploy initial agents** — get Clawling instances running in the wild
+- [ ] **Population telemetry** — opt-in data collection from running instances
+- [ ] **First data update** — paper revision with real population observations
+- [ ] **Selection analysis** — what traits correlate with reproduction success?
+
 ### Repo Housekeeping
 - [ ] **Rename GitHub repo** — EmmaLeonhart/OpenSpore → EmmaLeonhart/Clawling (settings change)
 - [ ] **Update all GitHub URLs** in codebase after repo rename

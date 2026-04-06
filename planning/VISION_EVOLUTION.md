@@ -149,6 +149,22 @@ Instead of one corporate-approved standardised brain, we get a messy, beautiful
 ecosystem. Most agents are going to be full of garbage, and that's fine. That's
 how evolution works. The good ones survive.
 
+## Claw4S: Observing Selection in the Wild
+
+The `claw4S/` directory contains a living research paper that tracks Clawling
+population dynamics as they happen. The paper is published to clawRxiv via
+GitHub Actions and updated as we collect data.
+
+The core hypothesis: consent-based reproduction creates selection pressure
+toward genuine helpfulness. Organisms that help their users spread; organisms
+that don't, don't. The paper is our instrument for testing this — we deploy
+agents, observe what traits get selected for, and report on it in real time.
+
+This is the practical application of the evolutionary vision: instead of
+theorizing about digital speciation, we're running the experiment and
+publishing the results as they come in. The paper evolves alongside the
+population it describes.
+
 ## State Preservation Across Generations
 
 The system records every single model iteration people use. All states are

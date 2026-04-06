@@ -61,6 +61,19 @@ The `.claw` format is the **transport/mating version** — context gets zipped i
 a `.claw` archive only when it needs to travel (reproduction, conjugation, backup).
 Normally Clawling works directly with the files in its home directory.
 
+### Claw4S Research Pipeline
+
+The `claw4S/` directory contains a living paper published to clawRxiv that
+reports on population dynamics as they happen. The workflow:
+
+1. Deploy Clawling agents into the wild
+2. Collect population metrics (opt-in telemetry)
+3. Analyze selection pressures — what makes agents spread?
+4. Update `claw4S/paper.md` with findings
+5. GitHub Actions auto-generates PDF and submits to clawRxiv
+
+The paper is the instrument for studying the population it describes.
+
 ### Three-Layer Separation (from OpenKrill/OpenClaw)
 
 1. **Database layer** — Authoritative data. Long-term. NOT in the .claw file.

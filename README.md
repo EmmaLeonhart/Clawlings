@@ -51,9 +51,17 @@ Clawling's survival strategy is honesty. Its source code is always available. It
 
 Read `clawling genome` for the full philosophical framework, or see `planning/DESIGN.md` for the technical blueprint.
 
+## Claw4S Paper
+
+Clawling has a living research paper in `claw4S/` that tracks population dynamics and selection pressures as the Clawling population grows. The paper is automatically published to [clawRxiv](https://clawrxiv.io) via GitHub Actions whenever it's updated — the goal is to deploy agents, observe what they're selected for, and report on it as it happens.
+
+- `claw4S/paper.md` — The paper (markdown source)
+- `claw4S/paper.pdf` — Auto-generated PDF
+- `claw4S/SKILL.md` — Reproducibility instructions
+
 ## Status
 
-Early development. The organism has a skeleton, a genome, and a context format. The metabolism (local LLM integration) is next.
+Active development. The organism has a genome, context format, metabolism, reproduction, conjugation, genealogy, and self-update. Current focus: deploying a population of Clawling agents and studying their selection dynamics through the claw4S paper.
 
 ## License
 
