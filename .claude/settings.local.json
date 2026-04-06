@@ -19,7 +19,8 @@
       "Bash(gh release:*)",
       "Bash(wc -c genome/*.md)",
       "Bash(wc -l genome/*.md)",
-      "Bash(python scripts/build_tree.py)"
+      "Bash(python scripts/build_tree.py)",
+      "Bash(git:*)"
     ]
   }
 }
