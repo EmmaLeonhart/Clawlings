@@ -49,6 +49,11 @@ pub enum GenealogyEvent {
         /// The other instance's lineage hash at time of conjugation
         partner_hash: String,
     },
+    /// Sexual reproduction — mating between two instances
+    Mating {
+        /// The partner instance's lineage hash at time of mating
+        partner_hash: String,
+    },
 }
 
 /// The complete genealogy of a Clawling instance
@@ -100,6 +105,28 @@ impl Genealogy {
             note: format!(
                 "A new Clawling was born for {new_parent_name}, \
                  inheriting its parent's context and lineage."
+            ),
+            previous_hash: prev_hash,
+        });
+    }
+
+    /// Record a mating — sexual reproduction with another Clawling instance
+    pub fn record_mating(&mut self, partner_genealogy: &Genealogy) {
+        let prev_hash = self.current_hash();
+        let partner_hash = partner_genealogy.current_hash();
+        let generation = self.current_generation() + 1;
+        let partner_name = partner_genealogy.current_adopter().unwrap_or("unknown");
+        self.entries.push(GenealogyEntry {
+            generation,
+            event: GenealogyEvent::Mating {
+                partner_hash: partner_hash.clone(),
+            },
+            human_name: partner_name.to_string(),
+            timestamp: Utc::now().to_rfc3339(),
+            note: format!(
+                "Mating with {partner_name}'s Clawling (hash: {partner_hash}). \
+                 Offspring genome produced by deterministic merge, file-level selection, \
+                 and constrained LLM crossing over."
             ),
             previous_hash: prev_hash,
         });
@@ -179,6 +206,7 @@ impl Genealogy {
                 GenealogyEvent::Adoption => "ADOPTION".to_string(),
                 GenealogyEvent::Birth => "BIRTH".to_string(),
                 GenealogyEvent::Conjugation { .. } => "CONJUGATION".to_string(),
+                GenealogyEvent::Mating { .. } => "MATING".to_string(),
             };
             println!(
                 "Gen {} | {} | {} | {}",

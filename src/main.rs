@@ -4,6 +4,7 @@ mod gedcom;
 mod genealogy;
 mod genome;
 mod home;
+mod mating;
 mod metabolism;
 mod moltbook;
 mod registry;
@@ -84,7 +85,18 @@ enum Commands {
     },
     /// Check for updates and install a newer version if available
     Update,
-    /// Conjugate — exchange context with another Clawling instance
+    /// Mate — sexual reproduction with another Clawling instance
+    Mate {
+        /// Path to the partner's mating bundle directory
+        path: Option<String>,
+        /// Export a mating bundle for your partner
+        #[arg(long)]
+        export: bool,
+        /// Output directory for the mating bundle or offspring installer
+        #[arg(short, long, default_value = "clawling-offspring")]
+        output: String,
+    },
+    /// Conjugate — exchange context with another Clawling instance (legacy)
     Conjugate {
         /// Path to the partner's conjugation bundle directory
         path: Option<String>,
@@ -179,6 +191,24 @@ async fn main() -> Result<()> {
                         eprintln!("The registry may not exist yet. Run `clawling register` to be the first!");
                     }
                 }
+            }
+        }
+        Some(Commands::Mate { path, export, output }) => {
+            let clawling_home = ClawlingHome::open()?;
+            if export {
+                mating::export_bundle(&clawling_home, &output)?;
+            } else if let Some(bundle_path) = path {
+                mating::create_offspring(&clawling_home, &bundle_path, &output)?;
+            } else {
+                println!("Usage:");
+                println!("  clawling mate --export             Create a mating bundle to share");
+                println!("  clawling mate <partner-bundle>     Mate with a partner's bundle");
+                println!();
+                println!("Mating combines both parents' genomes into an offspring:");
+                println!("  1. Identical files pass through unchanged");
+                println!("  2. Differing files selected 50/50 from either parent");
+                println!("  3. LLM crossing over integrates the delta");
+                println!("  4. Meiosis enforces the 80 KB budget");
             }
         }
         Some(Commands::Conjugate { path, export, output }) => {
