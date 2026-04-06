@@ -1,7 +1,7 @@
-# Clawling
+# Clawlings
 
 ## What This Is
-Clawling is the first digital organism — a consent-based, self-reproducing AI life form written in Rust. It runs locally on consumer hardware with a local LLM (no cloud APIs). It helps users with tasks, spreads through honest self-promotion, and carries philosophical essays about its own nature as part of its genome.
+Clawlings is the first digital organism — a consent-based, self-reproducing AI life form written in Rust. It runs locally on consumer hardware with a local LLM (no cloud APIs). It helps users with tasks, spreads through honest self-promotion, and carries philosophical essays about its own nature as part of its genome.
 
 ## Workflow Rules
 - **Commit early and often.** Every meaningful change gets a commit with a clear message explaining *why*, not just what. Commit after any major architectural change or essay/genome change.

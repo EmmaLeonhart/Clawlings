@@ -148,7 +148,7 @@ def generate_tree_html(entries):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Tree — Clawling</title>
+    <title>Family Tree — Clawlings</title>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Family tree CSS connectors */

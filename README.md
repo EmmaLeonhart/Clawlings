@@ -1,4 +1,4 @@
-# Clawling
+# Clawlings
 
 The first digital organism.
 

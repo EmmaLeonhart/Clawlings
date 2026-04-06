@@ -1,4 +1,4 @@
-# Clawling Design Document
+# Clawlings Design Document
 
 > Extracted from the founding conversation. This is Clawling's genome blueprint.
 
