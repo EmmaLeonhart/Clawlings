@@ -243,6 +243,7 @@ def generate_tree_html(entries):
             <a href="evolution.html">Evolution</a>
             <a href="vision.html">Vision</a>
             <a href="tree.html" class="active">Family Tree</a>
+            <a href="paper.html">Paper</a>
             <a href="download.html">Download</a>
             <a href="https://github.com/EmmaLeonhart/OpenSpore">Source</a>
         </nav>

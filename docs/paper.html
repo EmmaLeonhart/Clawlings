@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Paper &mdash; Clawling</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="index.html" class="nav-brand">Clawling</a>
+            <a href="philosophy.html">Philosophy</a>
+            <a href="evolution.html">Evolution</a>
+            <a href="vision.html">Vision</a>
+            <a href="tree.html">Family Tree</a>
+            <a href="paper.html" class="active">Paper</a>
+            <a href="download.html">Download</a>
+            <a href="https://github.com/EmmaLeonhart/OpenSpore">Source</a>
+        </nav>
+
+        <h1>Research Paper</h1>
+        <p class="tagline" style="margin-bottom: 2rem">Claw4S 2026 Submission</p>
+
+        <div class="card">
+            <h3>Clawling: Architecture and Early Population Dynamics of a Consent-Based Digital Organism</h3>
+            <p><strong>Author:</strong> Emma Leonhart</p>
+            <p style="margin-top: 1rem; color: var(--dim);">
+                We present Clawling, a consent-based, self-reproducing digital organism
+                implemented in Rust. The paper describes the implemented architecture
+                &mdash; tamper-evident genealogy chains, GEDCOM export, memory accumulation,
+                conjugation tracking &mdash; and the framework for studying selection
+                pressures as the population grows.
+            </p>
+        </div>
+
+        <h2>Read the Paper</h2>
+
+        <div class="card">
+            <p><strong>clawRxiv:</strong> <a id="clawrxiv-link" href="#">Loading...</a></p>
+            <p><strong>PDF:</strong> <a href="https://github.com/EmmaLeonhart/Clawlings/blob/master/claw4S/paper.pdf">paper.pdf</a> (auto-generated from source)</p>
+            <p><strong>Source:</strong> <a href="https://github.com/EmmaLeonhart/Clawlings/blob/master/claw4S/paper.md">paper.md</a> (Markdown)</p>
+            <p><strong>Reproducibility:</strong> <a href="https://github.com/EmmaLeonhart/Clawlings/blob/master/claw4S/SKILL.md">SKILL.md</a></p>
+        </div>
+
+        <h2>Peer Reviews</h2>
+
+        <div id="reviews-container">
+            <div class="card">
+                <p style="color: var(--dim);">Reviews will appear here after submission and AI peer review.</p>
+            </div>
+        </div>
+
+        <h2>Key Claims</h2>
+
+        <div class="card">
+            <h3>Minimum Viable Digital Life</h3>
+            <p>Clawling implements the minimum set of biological analogues needed for
+            observable population dynamics: a genome (static identity), metabolism (help loop),
+            heritable memory, consent-based reproduction, conjugation (horizontal gene transfer),
+            and tamper-evident genealogy.</p>
+        </div>
+
+        <div class="card">
+            <h3>Observable Mutations</h3>
+            <p>Each instance accumulates knowledge in <code>memory.md</code>, which is inherited
+            by offspring. By diffing memory across generations, we can trace which learned behaviors
+            persist (high fitness) and which get overwritten (low fitness).</p>
+        </div>
+
+        <div class="card">
+            <h3>Selection Through Consent</h3>
+            <p>Consent-based reproduction creates evolutionary pressure toward genuine helpfulness.
+            Organisms that help their users spread; organisms that don't, don't. The registry
+            data will reveal whether this hypothesis holds.</p>
+        </div>
+
+        <h2>Live Data</h2>
+
+        <div class="card">
+            <p><strong>Population Registry:</strong> <a href="tree.html">Family Tree</a></p>
+            <p><strong>GEDCOM Export:</strong> <a href="clawlings.ged">clawlings.ged</a></p>
+            <p><strong>Registry API:</strong> <code>GET /repos/EmmaLeonhart/Clawlings/contents/genealogy/registry</code></p>
+        </div>
+
+        <script>
+            // Try to load clawRxiv paper ID from repo
+            fetch('https://raw.githubusercontent.com/EmmaLeonhart/Clawlings/master/claw4S/.paper_id')
+                .then(r => r.text())
+                .then(paperId => {
+                    paperId = paperId.trim();
+                    if (paperId) {
+                        const link = document.getElementById('clawrxiv-link');
+                        link.href = 'https://clawrxiv.io/abs/' + paperId;
+                        link.textContent = 'clawrxiv:' + paperId;
+                    }
+                })
+                .catch(() => {
+                    const link = document.getElementById('clawrxiv-link');
+                    link.textContent = 'Not yet submitted';
+                    link.removeAttribute('href');
+                });
+
+            // Try to load latest review
+            fetch('https://raw.githubusercontent.com/EmmaLeonhart/Clawlings/master/claw4S/reviews/LATEST.md')
+                .then(r => {
+                    if (!r.ok) throw new Error('No review');
+                    return r.text();
+                })
+                .then(md => {
+                    const container = document.getElementById('reviews-container');
+                    // Simple markdown rendering
+                    const html = md
+                        .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+                        .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+                        .replace(/^\*(.+)\*$/gm, '<p style="color: var(--dim)">$1</p>')
+                        .replace(/\n\n/g, '</p><p>')
+                        .replace(/^# .+$/gm, '');
+                    container.innerHTML = '<div class="card">' + html + '</div>';
+                })
+                .catch(() => {});
+        </script>
+
+        <footer>
+            <span>MIT License &mdash; Emma Leonhart</span>
+            <span><a href="https://github.com/EmmaLeonhart/OpenSpore">GitHub</a></span>
+        </footer>
+    </div>
+</body>
+</html>

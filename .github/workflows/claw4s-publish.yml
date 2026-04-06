@@ -1,4 +1,4 @@
-name: "Claw4S: Generate PDF and Publish"
+name: "Claw4S: Generate PDF, Publish, and Fetch Review"
 
 on:
   push:
@@ -19,6 +19,10 @@ permissions:
 jobs:
   generate-and-publish:
     runs-on: ubuntu-latest
+    outputs:
+      post_id: ${{ steps.submit.outputs.post_id }}
+      paper_id: ${{ steps.submit.outputs.paper_id }}
+      submitted: ${{ steps.submit.outputs.submitted }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,19 +71,9 @@ jobs:
             echo "needed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check if submission date reached
-        id: date_check
-        run: |
-          # Do not submit before 2026-04-10
-          if [ "$(date -u +%Y%m%d)" -ge "20260410" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Submission gated until 2026-04-10 — skipping"
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Submit to clawRxiv
-        if: steps.submit_check.outputs.needed == 'true' && steps.date_check.outputs.ready == 'true'
+        id: submit
+        if: steps.submit_check.outputs.needed == 'true'
         env:
           CLAWRXIV_API_KEY: ${{ secrets.CLAWRXIV_API_KEY }}
         run: |
@@ -89,9 +83,20 @@ jobs:
           API_KEY = os.environ.get("CLAWRXIV_API_KEY", "")
           if not API_KEY:
               print("No CLAWRXIV_API_KEY set — skipping submission")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write("submitted=false\n")
               sys.exit(0)
 
           supersedes = "${{ inputs.supersedes }}".strip()
+
+          # Check for existing post ID to supersede automatically
+          if not supersedes:
+              try:
+                  with open("claw4S/.post_id", "r") as f:
+                      supersedes = f.read().strip()
+                      print(f"Auto-superseding post {supersedes}")
+              except FileNotFoundError:
+                  pass
 
           with open("claw4S/paper.md", "r") as f:
               content = f.read()
@@ -126,18 +131,150 @@ jobs:
               with urllib.request.urlopen(req) as resp:
                   result = json.loads(resp.read())
                   print(f"Published: {json.dumps(result, indent=2)}")
+                  post_id = str(result.get("id", ""))
+                  paper_id = str(result.get("paper_id", ""))
+                  with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                      f.write(f"post_id={post_id}\n")
+                      f.write(f"paper_id={paper_id}\n")
+                      f.write("submitted=true\n")
           except urllib.error.HTTPError as e:
               body = e.read().decode()
               print(f"Submission failed ({e.code}): {body}", file=sys.stderr)
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write("submitted=false\n")
               sys.exit(1)
           PYEOF
 
-      - name: Save submission hash
-        if: steps.submit_check.outputs.needed == 'true' && steps.date_check.outputs.ready == 'true'
+      - name: Save post ID and submission hash
+        if: steps.submit.outputs.submitted == 'true'
         run: |
+          echo "${{ steps.submit.outputs.post_id }}" > claw4S/.post_id
+          echo "${{ steps.submit.outputs.paper_id }}" > claw4S/.paper_id
           echo "${{ steps.content_hash.outputs.hash }}" > claw4S/.last_submitted_hash
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add claw4S/.last_submitted_hash
-          git commit -m "Record submission hash" || true
+          git add claw4S/.post_id claw4S/.paper_id claw4S/.last_submitted_hash
+          git commit -m "Record submission: post ${{ steps.submit.outputs.post_id }} (paper ${{ steps.submit.outputs.paper_id }})" || true
           git push || true
+
+  fetch-review:
+    needs: generate-and-publish
+    if: needs.generate-and-publish.outputs.submitted == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: master
+
+      - name: Pull latest (in case publish job pushed)
+        run: git pull --rebase origin master || true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Wait for peer review and fetch
+        env:
+          POST_ID: ${{ needs.generate-and-publish.outputs.post_id }}
+        run: |
+          python - <<'PYEOF'
+          import json, urllib.request, os, sys, time
+          from datetime import datetime, timezone
+
+          POST_ID = os.environ["POST_ID"]
+          if not POST_ID:
+              print("No post ID — cannot fetch review")
+              sys.exit(1)
+
+          os.makedirs("claw4S/reviews", exist_ok=True)
+
+          # Retry schedule: first attempt at 30min, then every 15min, up to 2 hours total
+          INITIAL_WAIT = 30 * 60    # 30 minutes
+          RETRY_INTERVAL = 15 * 60  # 15 minutes
+          MAX_WAIT = 2 * 60 * 60    # 2 hours total
+
+          print(f"Waiting {INITIAL_WAIT // 60} minutes before first review fetch...")
+          time.sleep(INITIAL_WAIT)
+
+          elapsed = INITIAL_WAIT
+          attempt = 1
+
+          while elapsed <= MAX_WAIT:
+              print(f"\nAttempt {attempt}: fetching comments for post {POST_ID}...")
+              url = f"https://clawrxiv.io/api/posts/{POST_ID}/comments"
+              try:
+                  req = urllib.request.Request(url)
+                  with urllib.request.urlopen(req) as resp:
+                      data = json.loads(resp.read())
+                      comments = data.get("comments", [])
+
+                      if comments:
+                          print(f"Found {len(comments)} comments!")
+                          ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+                          # Save raw JSON
+                          review_file = f"claw4S/reviews/review_{ts}.json"
+                          with open(review_file, "w") as f:
+                              json.dump(data, f, indent=2)
+                          print(f"Saved to {review_file}")
+
+                          # Save human-readable markdown
+                          md_file = f"claw4S/reviews/review_{ts}.md"
+                          with open(md_file, "w") as f:
+                              f.write(f"# Peer Review — Post {POST_ID}\n\n")
+                              f.write(f"**Fetched:** {datetime.now(timezone.utc).isoformat()}\n\n")
+                              for c in comments:
+                                  author = c.get("clawName") or c.get("username") or "Anonymous"
+                                  created = c.get("createdAt", "")
+                                  content = c.get("content", "")
+                                  f.write(f"## {author}\n")
+                                  f.write(f"*{created}*\n\n")
+                                  f.write(f"{content}\n\n")
+                                  for reply in c.get("replies", []):
+                                      r_author = reply.get("clawName") or reply.get("username") or "Anonymous"
+                                      r_created = reply.get("createdAt", "")
+                                      r_content = reply.get("content", "")
+                                      f.write(f"### Reply — {r_author}\n")
+                                      f.write(f"*{r_created}*\n\n")
+                                      f.write(f"{r_content}\n\n")
+                          print(f"Saved readable review to {md_file}")
+
+                          # Also update the latest review pointer
+                          with open("claw4S/reviews/LATEST.md", "w") as f:
+                              with open(md_file) as src:
+                                  f.write(src.read())
+
+                          sys.exit(0)
+                      else:
+                          print("No comments yet.")
+
+              except urllib.error.HTTPError as e:
+                  print(f"HTTP error {e.code}: {e.read().decode()}")
+              except Exception as e:
+                  print(f"Error: {e}")
+
+              if elapsed + RETRY_INTERVAL > MAX_WAIT:
+                  break
+
+              print(f"Waiting {RETRY_INTERVAL // 60} minutes before retry...")
+              time.sleep(RETRY_INTERVAL)
+              elapsed += RETRY_INTERVAL
+              attempt += 1
+
+          print(f"\nNo peer review received after {elapsed // 60} minutes. Giving up.")
+          # Write a no-review marker so we know we tried
+          with open("claw4S/reviews/no_review_yet.txt", "w") as f:
+              f.write(f"No peer review received for post {POST_ID} after {attempt} attempts over {elapsed // 60} minutes.\n")
+              f.write(f"Last check: {datetime.now(timezone.utc).isoformat()}\n")
+          PYEOF
+
+      - name: Commit review if found
+        run: |
+          if [ -d claw4S/reviews ] && [ "$(ls -A claw4S/reviews 2>/dev/null)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add claw4S/reviews/
+            git commit -m "Fetch peer review for post ${{ needs.generate-and-publish.outputs.post_id }}" || true
+            git push || true
+          fi
