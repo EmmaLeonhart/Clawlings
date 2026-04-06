@@ -34,11 +34,11 @@
             <p><strong>Reproducibility:</strong> <a href="https://github.com/EmmaLeonhart/Clawlings/blob/master/claw4S/SKILL.md">SKILL.md</a></p>
         </div>
 
-        <h2>Peer Reviews</h2>
+        <h2>Revision History &amp; Peer Reviews</h2>
 
         <div id="reviews-container">
             <div class="card">
-                <p style="color: var(--dim);">Reviews will appear here after submission and AI peer review.</p>
+                <p style="color: var(--dim);">Loading review history...</p>
             </div>
         </div>
 
@@ -92,24 +92,50 @@
                     link.removeAttribute('href');
                 });
 
-            // Try to load latest review
-            fetch('https://raw.githubusercontent.com/EmmaLeonhart/Clawlings/master/claw4S/reviews/LATEST.md')
-                .then(r => {
-                    if (!r.ok) throw new Error('No review');
-                    return r.text();
+            // Load all review files from the repo
+            fetch('https://api.github.com/repos/EmmaLeonhart/Clawlings/contents/claw4S/reviews')
+                .then(r => r.json())
+                .then(files => {
+                    var reviews = files
+                        .filter(f => f.name.match(/^review_v\d+\.json$/))
+                        .sort((a, b) => b.name.localeCompare(a.name));
+                    if (!reviews.length) {
+                        document.getElementById('reviews-container').innerHTML =
+                            '<div class="card"><p style="color: var(--dim);">No reviews yet.</p></div>';
+                        return;
+                    }
+                    return Promise.all(reviews.map(f =>
+                        fetch(f.download_url).then(r => r.json())
+                    ));
                 })
-                .then(md => {
-                    const container = document.getElementById('reviews-container');
-                    // Simple markdown rendering
-                    const html = md
-                        .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-                        .replace(/^### (.+)$/gm, '<h4>$1</h4>')
-                        .replace(/^\*(.+)\*$/gm, '<p style="color: var(--dim)">$1</p>')
-                        .replace(/\n\n/g, '</p><p>')
-                        .replace(/^# .+$/gm, '');
-                    container.innerHTML = '<div class="card">' + html + '</div>';
+                .then(data => {
+                    if (!data) return;
+                    var container = document.getElementById('reviews-container');
+                    container.innerHTML = data.map((r, i) => {
+                        var version = 'v' + (data.length - i);
+                        var ratingColor = r.rating === 'Reject' ? '#e74c3c' :
+                                          r.rating === 'Accept' ? '#2ecc71' : '#f39c12';
+                        return '<div class="card">' +
+                            '<h3>' + version + ' &mdash; <span style="color:' + ratingColor + '">' +
+                            r.rating + '</span></h3>' +
+                            '<p style="color: var(--dim)">Reviewed ' + r.createdAt +
+                            ' by ' + r.model + '</p>' +
+                            '<p>' + r.summary + '</p>' +
+                            '<details><summary style="cursor:pointer;color:var(--accent)">Strengths (' +
+                            r.pros.length + ')</summary><ul>' +
+                            r.pros.map(p => '<li>' + p + '</li>').join('') +
+                            '</ul></details>' +
+                            '<details><summary style="cursor:pointer;color:var(--accent)">Weaknesses (' +
+                            r.cons.length + ')</summary><ul>' +
+                            r.cons.map(c => '<li>' + c + '</li>').join('') +
+                            '</ul></details>' +
+                            '</div>';
+                    }).join('');
                 })
-                .catch(() => {});
+                .catch(() => {
+                    document.getElementById('reviews-container').innerHTML =
+                        '<div class="card"><p style="color: var(--dim);">Could not load reviews.</p></div>';
+                });
         </script>
 
         <footer>

@@ -24,7 +24,19 @@
       "Bash(python claw4S/generate_pdf.py)",
       "Bash(python:*)",
       "Bash(gh secret:*)",
-      "Bash(gh workflow:*)"
+      "Bash(gh workflow:*)",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1026/comments\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1026\")",
+      "Bash(curl -sv \"https://clawrxiv.io/api/posts/1026/comments\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts?limit=5\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1033/comments\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1020/comments\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/100/comments\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1026/reviews\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1026/review\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/reviews/1026\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1026/feedback\")",
+      "Bash(curl -s \"https://clawrxiv.io/api/posts/1034/review\")"
     ]
   }
 }

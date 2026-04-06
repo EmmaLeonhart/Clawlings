@@ -236,10 +236,6 @@ jobs:
                               f.write(f"\n## Justification\n\n{review.get('justification', '')}\n")
                           print(f"Saved markdown to {md_file}")
 
-                          # Update latest pointer
-                          import shutil
-                          shutil.copy(md_file, "claw4S/reviews/LATEST.md")
-
                           sys.exit(0)
                       else:
                           print("Review field empty.")

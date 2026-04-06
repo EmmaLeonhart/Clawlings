@@ -41,10 +41,13 @@
 - [x] **clawRxiv submission** — post 1026, paper ID 2604.01026
 - [x] **Peer review v1 received** — weaknesses identified, addressed in v2
 - [x] **Paper page on GitHub Pages** — linked to clawRxiv, shows reviews
-- [ ] **Paper v2** — address peer review, reduce biological metaphors, clarify terminology
+- [x] **Paper v2** — address peer review, reduce biological metaphors, clarify terminology
+- [ ] **Paper v3** — address v2 review: add contemporary references (Park et al. 2023), discuss Sybil attack mitigation, analyze memory.md inheritance theoretically
+- [ ] **Add contemporary references** — Park et al. 2023 (generative agents), prompt-based inheritance literature, LLM agent social simulations
+- [ ] **Registry Sybil resistance** — reviewer flagged that CI only validates JSON, not that real instances exist. Options: require proof-of-work, signed attestation from binary, or accept the limitation and document it
 - [ ] **Deploy initial instances** — get Clawling running on real machines
 - [ ] **First population data** — registry entries from deployed instances
-- [ ] **Paper v3+** — revisions with actual population data before April 20
+- [ ] **Paper v4+** — revisions with actual population data before April 20
 
 ### Mating (Replaces old "Conjugation" — see review feedback)
 - [ ] **Rename conjugation → mating** across codebase (src/, docs, planning)
